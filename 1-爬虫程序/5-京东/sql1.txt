@@ -1,0 +1,109 @@
+### 建表
+create database jd2;
+use jd2;
+create table jd_jiadian(
+lei VARCHAR(1000) NOT NULL,
+proid VARCHAR(1000) NOT NULL,
+proname VARCHAR(1000) NOT NULL,
+lable VARCHAR(1000) NOT NULL,
+prourl VARCHAR(1000) NOT NULL,
+proprice VARCHAR(1000) NOT NULL,
+goodRateShow VARCHAR(1000) NOT NULL,
+commentCount VARCHAR(1000) NOT NULL,
+imageListCount VARCHAR(1000) NOT NULL,
+afterCount VARCHAR(1000) NOT NULL,
+goodCount VARCHAR(1000) NOT NULL,
+generalCount VARCHAR(1000) NOT NULL,
+poorCount VARCHAR(1000) NOT NULL,
+commentid VARCHAR(1000) NOT NULL,
+guid VARCHAR(1000) NOT NULL,
+content VARCHAR(1000) NOT NULL,
+creationTime VARCHAR(1000) NOT NULL,
+replyCount VARCHAR(1000) NOT NULL,
+score VARCHAR(1000) NOT NULL,
+usefulVoteCount VARCHAR(1000) NOT NULL
+ )ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+### 去重-分组后去除索引非最大值的记录
+alter table jd_jiadian  add id int NOT NULL PRIMARY KEY AUTO_INCREMENT FIRST;	
+delete from jd_jiadian  where id not in (select maxid from 
+(select max(id) as maxid from jd_jiadian group by guid) b);
+alter table jd_jiadian drop id;
+
+### 查询
+select count(distinct proid) from jd_jiadian #1222件商品
+select count(distinct guid) from jd_jiadian where length(content)>32 and length(lable)>2 #100869条数据
+
+select * from jd_jiadian where length(content)>32 and length(lable)>2 order by lei,proid  #100869条数据
+
+select lei,content from jd_jiadian where length(content)>32 and length(lable)>2 order by lei,proid  #100869条数据
+
+
+### 查询
+select lei,count(proid) as '评论总数',count(distinct proid) as '产品数量' from (select * from jd_jiadian where length(content)>32 and length(lable)>2 order by lei,proid) as a group by lei order by lei
+
+select lei,score as '评分',count(score) as '评分用户数' from (select * from jd_jiadian where length(content)>32 and length(lable)>2 order by lei,proid) as a group by lei,score order by lei,score
+
+select b.lei as '九类',b.score as '评分',b.sc as '评分用户数',c.sump as '类总数',100*b.sc/c.sump as '评分百分比' from ((select lei,score,count(score) as sc from (select * from jd_jiadian where length(content)>32 and length(lable)>2 order by lei,proid) as a group by lei,score order by lei,score) b left join (select lei, count(proid) as sump from jd_jiadian where length(content)>32 and length(lable)>2 group by lei order by lei) c on b.lei=c.lei) 
+
+### 分类查询
+select * from (select * from jd_jiadian where length(content)>32 and length(lable)>2 and lei in ('0','1','2') order by lei,proid) b order by rand() limit 2000
+select * from (select * from jd_jiadian where length(content)>32 and length(lable)>2 and lei in ('3','4') order by lei,proid) b order by rand() limit 2000
+select * from (select * from jd_jiadian where length(content)>32 and length(lable)>2 and lei in ('5','6') order by lei,proid) b order by rand() limit 2000
+select * from (select * from jd_jiadian where length(content)>32 and length(lable)>2 and lei in ('7','8') order by lei,proid) b order by rand() limit 2000
+
+
+### 在MySQL中实现Rank高级排名函数 - 简书  https://www.jianshu.com/p/bb1b72a1623e
+### 排序
+select lei,proid,proname,rank from jd_jiadian  group by proid order by proid 
+alter table jd_jiadian  add column iis varchar(30);
+SELECT @i:=0;
+UPDATE jd_jiadian SET iis = @i:=@i+1;
+
+### 排序
+SELECT lei,proid,
+CASE 
+WHEN @prevRank = proid THEN @curRank 
+WHEN @prevRank := proid THEN @curRank := @curRank + 1
+END AS rank
+FROM jd_jiadian p, 
+(SELECT @curRank :=0, @prevRank := NULL) r
+ORDER BY proid
+
+### 分组排序
+CREATE TABLE `players` (
+  `pid` int(2) NOT NULL AUTO_INCREMENT,
+  `name1` char(50) NOT NULL,
+  `age` int(2) NOT NULL,
+  PRIMARY KEY (`pid`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+
+INSERT INTO `players` (`pid`, `name1`, `age`) VALUES
+(1, 'Samual', 25),
+(2, 'Vino', 20),
+(3, 'John', 20),
+(4, 'Andy', 22),
+(5, 'Vino', 21),
+(6, 'Dew', 24),
+(7, 'Vino', 25),
+(8, 'William', 26),
+(9, 'Vino', 23),
+(10, 'Peter', 19),
+(11, 'Tom', 20),
+(12, 'Vino', 20);
+
+SELECT pid, age,name1,
+CASE 
+WHEN @prevRank = name1 THEN @curRank 
+WHEN @prevRank := name1 THEN @curRank := @curRank + 1
+END AS rank3
+FROM players p,
+(SELECT @curRank :=0, @prevRank := NULL) r
+ORDER BY  name1
+
+SELECT pid, name1, age, @curRank := @curRank + 1 AS rank1
+FROM players p, (
+SELECT @curRank := 0
+) q
+ORDER BY name1

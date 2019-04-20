@@ -1,0 +1,11 @@
+create database tradewar;
+use tradewar;
+create table cn_bing(
+urls VARCHAR(1000) NOT NULL,
+title VARCHAR(1000) NOT NULL,
+times VARCHAR(1000) NOT NULL,
+timestamp1 VARCHAR(1000) NOT NULL,
+abstract VARCHAR(1000) NOT NULL
+ )ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+https://blog.csdn.net/qq_38779421/article/details/78347185
